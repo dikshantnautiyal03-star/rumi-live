@@ -33,15 +33,23 @@ function initializeFirebaseAdmin() {
     }
 
     if (admin.apps.length === 0) {
-        try {
-            admin.initializeApp({
-                credential: credential,
-                projectId: process.env.FIREBASE_PROJECT_ID
-            });
-            console.log('✅ Firebase Admin Initialized');
-            console.log('Project ID:', admin.app().options.projectId);
-        } catch (e) {
-            console.error('Error during admin.initializeApp:', e);
+        // If we have credentials, initialize as usual
+        if (credential) {
+            try {
+                admin.initializeApp({
+                    credential: credential,
+                    projectId: process.env.FIREBASE_PROJECT_ID
+                });
+                console.log('✅ Firebase Admin Initialized');
+                console.log('Project ID:', admin.app().options.projectId);
+            } catch (e) {
+                console.error('Error during admin.initializeApp:', e);
+            }
+        }
+        // If no credentials (e.g. during build where secrets aren't available), 
+        // skip initialization to prevent build crash.
+        else {
+            console.warn('[Firebase Admin] Skipping initialization: No credentials found (build step or missing secret).');
         }
     }
 }
