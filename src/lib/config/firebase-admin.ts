@@ -5,8 +5,7 @@ import * as path from 'path';
 // Server-side Firebase Admin SDK initialization
 // This file should only be imported in API routes (server-side)
 
-let db: admin.firestore.Firestore;
-let auth: admin.auth.Auth;
+// Variables replaced by lazy-loaded Proxies below
 
 function initializeFirebaseAdmin() {
     if (admin.apps.length > 0) {
@@ -57,7 +56,24 @@ function initializeFirebaseAdmin() {
 // Initialize on first import
 initializeFirebaseAdmin();
 
-db = admin.firestore();
-auth = admin.auth();
+const db = new Proxy({} as admin.firestore.Firestore, {
+    get: (_target, prop) => {
+        initializeFirebaseAdmin();
+        if (!admin.apps.length) {
+            throw new Error('Firebase Admin not initialized. Ensure FIREBASE_SERVICE_ACCOUNT_KEY is set.');
+        }
+        return Reflect.get(admin.firestore(), prop);
+    }
+});
+
+const auth = new Proxy({} as admin.auth.Auth, {
+    get: (_target, prop) => {
+        initializeFirebaseAdmin();
+        if (!admin.apps.length) {
+            throw new Error('Firebase Admin not initialized. Ensure FIREBASE_SERVICE_ACCOUNT_KEY is set.');
+        }
+        return Reflect.get(admin.auth(), prop);
+    }
+});
 
 export { db, auth, admin };
