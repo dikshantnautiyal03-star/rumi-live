@@ -8,7 +8,7 @@
         ],
         "rewrites": [
             {
-                "source": "/api/**",
+                "source": "**",
                 "run": {
                     "serviceId": "rumi-live",
                     "region": "us-central1"
