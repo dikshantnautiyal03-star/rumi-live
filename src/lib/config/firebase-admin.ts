@@ -41,7 +41,8 @@ function initializeFirebaseAdmin() {
                 console.log('🔑 Credential Project ID:', credProjectId);
 
                 admin.initializeApp({
-                    credential: credential
+                    credential: credential,
+                    projectId: credProjectId
                 });
                 console.log('✅ Firebase Admin Initialized Successfully');
                 console.log('Project ID:', admin.app().options.projectId);
