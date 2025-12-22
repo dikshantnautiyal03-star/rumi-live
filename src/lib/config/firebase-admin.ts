@@ -47,8 +47,18 @@ function initializeFirebaseAdmin() {
         }
         // If no credentials (e.g. during build where secrets aren't available), 
         // skip initialization to prevent build crash.
+        // If no credentials found, try Application Default Credentials (ADC)
+        // This is required for Cloud Run / App Engine / Cloud Functions
         else {
-            console.warn('[Firebase Admin] Skipping initialization: No credentials found (build step or missing secret).');
+            try {
+                admin.initializeApp({
+                    projectId: process.env.FIREBASE_PROJECT_ID,
+                    credential: admin.credential.applicationDefault()
+                });
+                console.log('✅ Firebase Admin Initialized with ADC');
+            } catch (e) {
+                console.warn('[Firebase Admin] Skipping initialization: No credentials found (build step) and ADC failed.', e);
+            }
         }
     }
 }
