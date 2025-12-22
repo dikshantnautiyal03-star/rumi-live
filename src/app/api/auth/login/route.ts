@@ -77,7 +77,15 @@ export async function POST(request: NextRequest) {
         console.error('Error details:', err.details);
         console.error('Firebase Project ID:', admin.app().options.projectId);
         return NextResponse.json(
-            { error: 'Internal Server Error', message: err.message },
+            {
+                error: 'Internal Server Error',
+                message: err.message,
+                debug: {
+                    projectId: admin.apps.length ? admin.app().options.projectId : 'not-initialized',
+                    envProjectId: process.env.FIREBASE_PROJECT_ID,
+                    serviceAccountKey: !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY
+                }
+            },
             { status: 500 }
         );
     }
