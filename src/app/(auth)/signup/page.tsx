@@ -36,6 +36,7 @@ export default function SignupPage() {
             return await response.json();
         } catch (err) {
             console.error("Backend sync error:", err);
+            throw err;
         }
     };
 
