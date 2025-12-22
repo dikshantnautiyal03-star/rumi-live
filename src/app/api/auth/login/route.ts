@@ -16,9 +16,9 @@ export async function POST(request: NextRequest) {
     try {
         const { uid, email, picture, name } = user;
 
+        const userRef = db.collection('users').doc(uid);
         let userDoc;
         try {
-            const userRef = db.collection('users').doc(uid);
             userDoc = await userRef.get();
         } catch (dbError: any) {
             console.error("Firestore Error:", dbError);
