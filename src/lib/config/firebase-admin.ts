@@ -34,31 +34,36 @@ function initializeFirebaseAdmin() {
     if (admin.apps.length === 0) {
         // If we have credentials, initialize as usual
         if (credential) {
-            try {
-                admin.initializeApp({
-                    credential: credential
-                });
-                console.log('✅ Firebase Admin Initialized');
-                console.log('Project ID:', admin.app().options.projectId);
-            } catch (e) {
-                console.error('Error during admin.initializeApp:', e);
-            }
+            const serviceAccount = credential as any;
+            console.log('✅ Firebase Admin Initialized with Token Access');
+            // Attempt to safely log the project ID if available in the credential object
+            const credProjectId = serviceAccount?.projectId || serviceAccount?.project_id || 'unknown';
+            console.log('🔑 Credential Project ID:', credProjectId);
         }
+        admin.initializeApp({
+            credential: credential
+        });
+        console.log('✅ Firebase Admin Initialized');
+        console.log('Project ID:', admin.app().options.projectId);
+    } catch (e) {
+        console.error('Error during admin.initializeApp:', e);
+    }
+}
         // If no credentials (e.g. during build where secrets aren't available), 
         // skip initialization to prevent build crash.
         // If no credentials found, try Application Default Credentials (ADC)
         // This is required for Cloud Run / App Engine / Cloud Functions
         else {
-            try {
-                admin.initializeApp({
-                    projectId: process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || 'rumi-live',
-                    credential: admin.credential.applicationDefault()
-                });
-                console.log('✅ Firebase Admin Initialized with ADC');
-            } catch (e) {
-                console.warn('[Firebase Admin] Skipping initialization: No credentials found (build step) and ADC failed.', e);
-            }
-        }
+    try {
+        admin.initializeApp({
+            projectId: process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || 'rumi-live',
+            credential: admin.credential.applicationDefault()
+        });
+        console.log('✅ Firebase Admin Initialized with ADC');
+    } catch (e) {
+        console.warn('[Firebase Admin] Skipping initialization: No credentials found (build step) and ADC failed.', e);
+    }
+}
     }
 }
 
