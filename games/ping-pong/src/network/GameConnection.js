@@ -33,20 +33,31 @@ export class GameConnection {
 
         // Validate ICE servers
         const validatedIceServers = this.validateIceServers(this.iceServers);
+
+        // Check for TURN servers to decide policy
         const hasTurnServer = validatedIceServers.some(server =>
             server.urls && (server.urls.startsWith('turn:') || server.urls.startsWith('turns:'))
         );
 
+        this.usingRelay = hasTurnServer;
+
         console.log('[GameConnection] ICE Server Configuration:');
         console.log('  - Servers:', JSON.stringify(validatedIceServers, null, 2));
         console.log('  - Has TURN server:', hasTurnServer);
-        console.log('  - Transport policy: all (prefer STUN/Direct, fallback to TURN)');
+        console.log(`  - Transport policy: ${this.usingRelay ? 'relay (TURN only)' : 'all (STUN/Direct)'}`);
 
         const rtcConfig = {
             iceServers: validatedIceServers,
-            // Use 'all' to allow STUN/Direct connections and fallback to TURN if needed
-            iceTransportPolicy: 'all'
+            iceTransportPolicy: this.usingRelay ? 'relay' : 'all'
         };
+
+        this.createPeerConnection(rtcConfig);
+    }
+
+    createPeerConnection(rtcConfig) {
+        if (this.peerConnection) {
+            this.peerConnection.close();
+        }
 
         this.peerConnection = new RTCPeerConnection(rtcConfig);
 
@@ -99,8 +110,8 @@ export class GameConnection {
 
         // Create or receive data channels
         if (this.isInitiator) {
-            await this.createDataChannels();
-            await this.createAndSendOffer();
+            this.createDataChannels();
+            this.createAndSendOffer();
         } else {
             this.setupDataChannelReceiver();
         }
@@ -153,7 +164,7 @@ export class GameConnection {
     /**
      * Create data channels (initiator only)
      */
-    async createDataChannels() {
+    createDataChannels() {
         // Reliable channel for critical game state
         this.dataChannels.reliable = this.peerConnection.createDataChannel("game_reliable", {
             ordered: true
@@ -297,20 +308,44 @@ export class GameConnection {
      * Handle connection failure
      */
     handleConnectionFailure() {
-        console.log('[GameConnection] Attempting ICE Restart...');
-        if (this.isInitiator && this.peerConnection) {
-            this.peerConnection.createOffer({ iceRestart: true })
-                .then(offer => this.peerConnection.setLocalDescription(offer))
-                .then(() => {
-                    const payload = {
-                        offer: this.peerConnection.localDescription,
-                        to: this.opponentId
-                    };
-                    if (this.opponentUid) payload.targetUid = this.opponentUid;
+        if (this.usingRelay) {
+            console.log('[GameConnection] Relay connection failed. Switching to backup (STUN/Direct)...');
+            this.usingRelay = false;
 
-                    this.socket.emit('offer', payload);
-                })
-                .catch(err => console.error('[GameConnection] ICE Restart failed:', err));
+            // Force default STUN servers if we are switching to non-relay
+            const defaultStunServers = [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ];
+
+            // Re-initialize with all policy
+            const rtcConfig = {
+                iceServers: [...this.iceServers, ...defaultStunServers], // Ensure STUN is present
+                iceTransportPolicy: 'all'
+            };
+
+            console.log('[GameConnection] Re-initializing with policy: all (STUN/Direct)');
+            this.createPeerConnection(rtcConfig);
+
+            // If we are not the initiator, we just wait for the new offer
+            // But if we ARE the initiator, we need to restart the negotiation
+            // NOTE: Since we created a new PC, we act as if we are starting fresh, but maintaining initiator role.
+        } else {
+            console.log('[GameConnection] Connection failed (already on backup). Attempting ICE Restart...');
+            if (this.isInitiator && this.peerConnection) {
+                this.peerConnection.createOffer({ iceRestart: true })
+                    .then(offer => this.peerConnection.setLocalDescription(offer))
+                    .then(() => {
+                        const payload = {
+                            offer: this.peerConnection.localDescription,
+                            to: this.opponentId
+                        };
+                        if (this.opponentUid) payload.targetUid = this.opponentUid;
+
+                        this.socket.emit('offer', payload);
+                    })
+                    .catch(err => console.error('[GameConnection] ICE Restart failed:', err));
+            }
         }
     }
 

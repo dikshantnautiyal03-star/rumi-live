@@ -25,10 +25,26 @@ export class GameConnection {
         this.iceServers = config.iceServers || [];
 
         const validatedIceServers = this.validateIceServers(this.iceServers);
+
+        // Check for TURN servers to decide policy
+        const hasTurnServer = validatedIceServers.some(server =>
+            server.urls && (server.urls.startsWith('turn:') || server.urls.startsWith('turns:'))
+        );
+
+        this.usingRelay = hasTurnServer;
+
         const rtcConfig = {
             iceServers: validatedIceServers,
-            iceTransportPolicy: 'all'
+            iceTransportPolicy: this.usingRelay ? 'relay' : 'all'
         };
+
+        this.createPeerConnection(rtcConfig);
+    }
+
+    createPeerConnection(rtcConfig) {
+        if (this.peerConnection) {
+            this.peerConnection.close();
+        }
 
         this.peerConnection = new RTCPeerConnection(rtcConfig);
 
@@ -55,14 +71,46 @@ export class GameConnection {
                 this.peerConnection.connectionState === 'failed') {
                 this.isConnected = false;
                 this.eventEmitter.emit('game_connection_lost');
+                this.handleConnectionFailure();
             }
         };
 
         if (this.isInitiator) {
-            await this.createDataChannels();
-            await this.createAndSendOffer();
+            this.createDataChannels();
+            this.createAndSendOffer();
         } else {
             this.setupDataChannelReceiver();
+        }
+    }
+
+    handleConnectionFailure() {
+        if (this.usingRelay) {
+            console.log('[GameConnection] Relay connection failed. Switching to backup (STUN/Direct)...');
+            this.usingRelay = false;
+
+            const defaultStunServers = [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ];
+
+            const rtcConfig = {
+                iceServers: [...this.iceServers, ...defaultStunServers],
+                iceTransportPolicy: 'all'
+            };
+
+            this.createPeerConnection(rtcConfig);
+        } else {
+            // Existing or implied fallback (ICE Restart)
+            if (this.isInitiator && this.peerConnection) {
+                this.peerConnection.createOffer({ iceRestart: true })
+                    .then(offer => this.peerConnection.setLocalDescription(offer))
+                    .then(() => {
+                        const payload = { offer: this.peerConnection.localDescription, to: this.opponentId };
+                        if (this.opponentUid) payload.targetUid = this.opponentUid;
+                        this.socket.emit('offer', payload);
+                    })
+                    .catch(err => console.error('[GameConnection] ICE Restart failed:', err));
+            }
         }
     }
 
@@ -75,7 +123,7 @@ export class GameConnection {
         return servers;
     }
 
-    async createDataChannels() {
+    createDataChannels() {
         this.dataChannels.reliable = this.peerConnection.createDataChannel("game_reliable", { ordered: true });
         this.setupDataChannel(this.dataChannels.reliable);
 
