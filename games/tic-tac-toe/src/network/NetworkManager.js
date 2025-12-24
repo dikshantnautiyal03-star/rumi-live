@@ -193,7 +193,13 @@ export class NetworkManager {
                     console.warn('[NetworkManager] Timeout waiting for ICE servers');
                 }
             } else if (this.isEmbedded) {
+                console.log('[NetworkManager] Requesting ICE servers from parent (Embedded Mode)...');
                 window.parent.postMessage({ type: 'request_ice_servers' }, '*');
+                try {
+                    await this.waitForIceServersEmbedded(5000);
+                } catch (err) {
+                    console.warn('[NetworkManager] Timeout waiting for ICE servers (Embedded Mode)');
+                }
             }
         }
 
@@ -228,6 +234,26 @@ export class NetworkManager {
             };
             this.socket.once('ice_servers_config', handler);
             this.socket.emit('get_ice_servers');
+        });
+    }
+
+    async waitForIceServersEmbedded(timeoutMs = 5000) {
+        return new Promise((resolve, reject) => {
+            if (this.iceServers && this.iceServers.game && this.iceServers.game.length > 0) {
+                resolve(this.iceServers);
+                return;
+            }
+
+            const startTime = Date.now();
+            const checkInterval = setInterval(() => {
+                if (this.iceServers && this.iceServers.game && this.iceServers.game.length > 0) {
+                    clearInterval(checkInterval);
+                    resolve(this.iceServers);
+                } else if (Date.now() - startTime > timeoutMs) {
+                    clearInterval(checkInterval);
+                    reject(new Error('Timeout waiting for ICE servers (Embedded)'));
+                }
+            }, 100);
         });
     }
 

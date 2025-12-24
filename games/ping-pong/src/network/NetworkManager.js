@@ -251,12 +251,13 @@ export class NetworkManager {
                     console.warn('[NetworkManager] Timeout waiting for ICE servers (Socket Mode)');
                 }
             } else if (this.isEmbedded) {
-                // In embedded mode, we hope parent sent them or will send them. 
-                // We won't block indefinitely here, maybe just proceed or request them?
-                // Let's request them from parent
-                window.parent.postMessage({ type: 'request_ice_servers' }, '*');
-                // Wait a bit? Or just proceed.
                 console.log('[NetworkManager] Requesting ICE servers from parent (Embedded Mode)...');
+                window.parent.postMessage({ type: 'request_ice_servers' }, '*');
+                try {
+                    await this.waitForIceServersEmbedded(5000);
+                } catch (err) {
+                    console.warn('[NetworkManager] Timeout waiting for ICE servers (Embedded Mode)');
+                }
             }
         }
 
@@ -298,6 +299,33 @@ export class NetworkManager {
 
             this.socket.once('ice_servers_config', handler);
             this.socket.emit('get_ice_servers');
+        });
+    }
+
+    async waitForIceServersEmbedded(timeoutMs = 5000) {
+        return new Promise((resolve, reject) => {
+            if (this.iceServers && this.iceServers.game && this.iceServers.game.length > 0) {
+                resolve(this.iceServers);
+                return;
+            }
+
+            // We need to listen to the window message event ourselves here temporarily
+            // OR rely on the setupEmbeddedHandlers updating `this.iceServers` and polling?
+            // Since setupEmbeddedHandlers is already running, it updates `this.iceServers`.
+            // We can poll or add a one-time listener. Polling is safer against event listener leaks if not careful,
+            // but a custom event emitter approach is cleaner if we had one for internal events.
+            // Let's use a check loop for simplicity in this context without refactoring everything.
+
+            const startTime = Date.now();
+            const checkInterval = setInterval(() => {
+                if (this.iceServers && this.iceServers.game && this.iceServers.game.length > 0) {
+                    clearInterval(checkInterval);
+                    resolve(this.iceServers);
+                } else if (Date.now() - startTime > timeoutMs) {
+                    clearInterval(checkInterval);
+                    reject(new Error('Timeout waiting for ICE servers (Embedded)'));
+                }
+            }, 100);
         });
     }
 
