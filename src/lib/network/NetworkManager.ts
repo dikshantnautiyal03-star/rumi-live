@@ -198,6 +198,13 @@ export class NetworkManager {
     }
 
     async handleMatchFound(msg: MatchFoundData) {
+        console.log('[NetworkManager] handleMatchFound received:', msg);
+        if (msg.iceServers) {
+            console.log('[NetworkManager] msg.iceServers:', JSON.stringify(msg.iceServers, null, 2));
+        } else {
+            console.log('[NetworkManager] msg.iceServers is MISSING or NULL');
+        }
+
         this.roomId = msg.roomId;
         this.role = msg.role;
         this.opponentId = msg.opponentId; // Keep as Socket ID
