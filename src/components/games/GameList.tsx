@@ -80,11 +80,12 @@ export function GameList({ onSelectGame, compact = false }: GameListProps) {
             {/* Feedback Button */}
             <button
                 onClick={() => setShowFeedback(true)}
-                className="absolute top-4 right-4 z-40 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-full shadow-lg transition-all hover:scale-105 group hidden md:flex items-center gap-2"
+                className="absolute top-4 right-4 z-40 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-full shadow-lg transition-all hover:scale-105 group flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 title="Send Feedback"
+                aria-label="Send Feedback"
             >
                 <MessageSquarePlus className="w-4 h-4" />
-                <span className="text-xs font-bold whitespace-nowrap">
+                <span className="text-xs font-bold whitespace-nowrap hidden sm:inline">
                     Suggest Games
                 </span>
             </button>
@@ -97,7 +98,8 @@ export function GameList({ onSelectGame, compact = false }: GameListProps) {
                             <h3 className="text-lg font-bold text-gray-900">Send Feedback</h3>
                             <button
                                 onClick={() => setShowFeedback(false)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 rounded-sm"
+                                aria-label="Close feedback form"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -191,13 +193,17 @@ export function GameList({ onSelectGame, compact = false }: GameListProps) {
                                         onSelectGame ? (
                                             <button
                                                 onClick={() => onSelectGame(game.id)}
-                                                className="bg-white text-gray-900 rounded-full p-2 shadow-lg hover:scale-110 transition-transform"
+                                                className="bg-white text-gray-900 rounded-full p-2 shadow-lg hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-white"
+                                                aria-label={`Play ${game.title}`}
                                             >
                                                 <Play className="w-4 h-4 fill-current" />
                                             </button>
                                         ) : (
                                             <Link href={game.route}>
-                                                <button className="bg-white text-gray-900 rounded-full p-2 shadow-lg hover:scale-110 transition-transform">
+                                                <button
+                                                    className="bg-white text-gray-900 rounded-full p-2 shadow-lg hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-white"
+                                                    aria-label={`Play ${game.title}`}
+                                                >
                                                     <Play className="w-4 h-4 fill-current" />
                                                 </button>
                                             </Link>
