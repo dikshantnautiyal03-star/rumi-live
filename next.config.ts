@@ -14,6 +14,15 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   output: 'standalone', // Required for Docker deployment
 
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+      },
+    ],
+  },
+
   // Ensure static files in public folder are properly served
   // This includes games in /public/games/*
   async headers() {
@@ -45,5 +54,3 @@ const nextConfig: NextConfig = {
 
 export default nextConfig;
 // export default withPWA(nextConfig);
-
-
