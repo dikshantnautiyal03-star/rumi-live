@@ -262,13 +262,13 @@ export function TopBar({ mode, onModeChange, showToggle = true }: TopBarProps) {
                         <div className="bg-white p-1 rounded-full flex shadow-sm border border-gray-100">
                             <button
                                 onClick={() => onModeChange('game')}
-                                className={`px-6 py-1.5 rounded-full text-sm font-bold transition-all ${mode === 'game' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+                                className={`px-6 py-1.5 rounded-full text-sm font-bold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${mode === 'game' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
                             >
                                 Game
                             </button>
                             <button
                                 onClick={() => onModeChange('video')}
-                                className={`px-6 py-1.5 rounded-full text-sm font-bold transition-all ${mode === 'video' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+                                className={`px-6 py-1.5 rounded-full text-sm font-bold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${mode === 'video' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
                             >
                                 Video
                             </button>
@@ -366,6 +366,8 @@ export function TopBar({ mode, onModeChange, showToggle = true }: TopBarProps) {
                             setChatStartWith(null);
                             setIsChatOpen(true);
                         }}
+                        title="Chats"
+                        aria-label="Chats"
                     >
                         <MessageSquare className="w-6 h-6" />
                         {unreadCount > 0 && (
@@ -379,7 +381,13 @@ export function TopBar({ mode, onModeChange, showToggle = true }: TopBarProps) {
                     {/* Friends List */}
                     <Popover>
                         <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-orange-50 rounded-full relative">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-gray-500 hover:bg-orange-50 rounded-full relative"
+                                title="Friends"
+                                aria-label="Friends"
+                            >
                                 <Users className="w-6 h-6" />
                             </Button>
                         </PopoverTrigger>
@@ -412,6 +420,8 @@ export function TopBar({ mode, onModeChange, showToggle = true }: TopBarProps) {
                                                             setChatStartWith(friend.uid);
                                                             setIsChatOpen(true);
                                                         }}
+                                                        title="Send message"
+                                                        aria-label={`Send message to ${friend.name}`}
                                                     >
                                                         <MessageSquare className="w-3 h-3" />
                                                     </Button>
@@ -421,6 +431,8 @@ export function TopBar({ mode, onModeChange, showToggle = true }: TopBarProps) {
                                                         className="h-6 w-6 hover:bg-orange-50 hover:text-orange-600"
                                                         onClick={() => handleConnect(friend.uid, friend.name, friend.avatarUrl)}
                                                         disabled={outgoingStatus !== 'idle'}
+                                                        title="Invite to game"
+                                                        aria-label={`Invite ${friend.name} to game`}
                                                     >
                                                         <Gamepad2 className="w-3 h-3" />
                                                     </Button>
@@ -440,7 +452,13 @@ export function TopBar({ mode, onModeChange, showToggle = true }: TopBarProps) {
                     {/* Notifications */}
                     <Popover>
                         <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-orange-50 rounded-full relative">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-gray-500 hover:bg-orange-50 rounded-full relative"
+                                title="Notifications"
+                                aria-label="Notifications"
+                            >
                                 <Bell className="w-6 h-6" />
                                 {friendRequests.length > 0 && (
                                     <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
@@ -535,13 +553,16 @@ export function TopBar({ mode, onModeChange, showToggle = true }: TopBarProps) {
                     {/* User Menu */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center cursor-pointer border-2 border-white shadow-sm hover:ring-2 ring-orange-200 transition-all">
+                            <button
+                                className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center cursor-pointer border-2 border-white shadow-sm hover:ring-2 ring-orange-200 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-orange-500"
+                                aria-label="User menu"
+                            >
                                 {profile?.avatarUrl || user?.photoURL ? (
                                     <img src={profile?.avatarUrl || user?.photoURL || ''} alt="User" className="h-full w-full rounded-full object-cover" />
                                 ) : (
                                     <span className="text-orange-600 font-bold">{profile?.name?.[0]?.toUpperCase() || user?.displayName?.[0]?.toUpperCase() || 'U'}</span>
                                 )}
-                            </div>
+                            </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 border-0 shadow-xl">
                             <DropdownMenuLabel className="font-normal">
