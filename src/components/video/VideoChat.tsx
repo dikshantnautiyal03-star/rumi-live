@@ -57,15 +57,17 @@ export function VideoChat() {
             setMessages(prev => [...prev, { text: msg, isLocal: false }]);
         };
 
-        networkManager.on('local_video_track', handleLocalStream);
-        networkManager.on('remote_video_track', handleRemoteStream);
-        networkManager.on('match_found', handleMatchFound);
-        networkManager.on('queued', handleQueued);
-        networkManager.on('video_connection_lost', handleVideoLost);
-        networkManager.on('chat_message', handleChatMessage);
+        const unsubs = [
+            networkManager.on('local_video_track', handleLocalStream),
+            networkManager.on('remote_video_track', handleRemoteStream),
+            networkManager.on('match_found', handleMatchFound),
+            networkManager.on('queued', handleQueued),
+            networkManager.on('video_connection_lost', handleVideoLost),
+            networkManager.on('chat_message', handleChatMessage)
+        ];
 
         return () => {
-            // Cleanup listeners if needed
+            unsubs.forEach(unsub => unsub());
         };
     }, [networkManager]);
 
