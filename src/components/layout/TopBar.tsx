@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/config/firebase';
-import ChatPage from '@/app/(main)/chat/page';
+import dynamic from 'next/dynamic';
 import { IncomingCallDialog } from '@/components/dialogs/IncomingCallDialog';
 import { ConnectionStatusDialog, ConnectionStatus } from '@/components/dialogs/ConnectionStatusDialog';
 import { useConversations } from '@/lib/hooks/useChat';
@@ -57,6 +57,17 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MembershipDialog } from "@/components/dialogs/MembershipDialog";
 import { AlertModal } from "@/components/ui/alert-modal";
+
+const ChatPage = dynamic(() => import('@/app/(main)/chat/page'), {
+    loading: () => (
+        <div className="flex h-screen bg-gray-50 items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                <p className="text-gray-500">Loading chat...</p>
+            </div>
+        </div>
+    )
+});
 
 interface TopBarProps {
     mode: 'game' | 'video';
