@@ -1,15 +1,83 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { games, categories } from '@/app/(main)/game-catalog/data';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Play, Lock, MessageSquarePlus, X, Send, Loader2, Users } from 'lucide-react';
+import { games, categories, type Game } from '@/app/(main)/game-catalog/data';
+import { Card, CardContent } from '@/components/ui/card';
+import { Play, Lock, MessageSquarePlus, X, Send, Loader2 } from 'lucide-react';
 import { db, auth } from '@/lib/config/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { AlertModal } from '@/components/ui/alert-modal';
+
+// Extracted and memoized GameCard component
+interface GameCardProps {
+    game: Game;
+    onSelectGame?: (gameId: string) => void;
+}
+
+const GameCard = memo(({ game, onSelectGame }: GameCardProps) => {
+    return (
+        <Card className="group border-0 shadow-sm hover:shadow-lg transition-all duration-300 bg-white/90 backdrop-blur-sm rounded-lg overflow-hidden flex flex-col ring-1 ring-gray-100 hover:ring-orange-500/30">
+            <div className="relative aspect-video w-full overflow-hidden">
+                <Image
+                    src={game.image}
+                    alt={game.title}
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                    {game.isAvailable ? (
+                        onSelectGame ? (
+                            <button
+                                onClick={() => onSelectGame(game.id)}
+                                className="bg-white text-gray-900 rounded-full p-2 shadow-lg hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-white"
+                                aria-label={`Play ${game.title}`}
+                            >
+                                <Play className="w-4 h-4 fill-current" />
+                            </button>
+                        ) : (
+                            <Link href={game.route}>
+                                <button
+                                    className="bg-white text-gray-900 rounded-full p-2 shadow-lg hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-white"
+                                    aria-label={`Play ${game.title}`}
+                                >
+                                    <Play className="w-4 h-4 fill-current" />
+                                </button>
+                            </Link>
+                        )
+                    ) : (
+                        <div className="bg-black/60 text-white rounded-full p-1.5 backdrop-blur">
+                            <Lock className="w-4 h-4" />
+                        </div>
+                    )}
+                </div>
+                <div className="absolute top-1 right-1 pointer-events-none">
+                    <span className="text-[8px] font-bold text-white bg-black/50 backdrop-blur-md px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                        {game.category}
+                    </span>
+                </div>
+            </div>
+
+            <CardContent className="p-2 flex flex-col gap-0.5">
+                <h3 className="text-[11px] font-bold text-gray-800 leading-tight truncate group-hover:text-orange-600 transition-colors">
+                    {game.title}
+                </h3>
+                <div className="flex items-center justify-between">
+                    <p className="text-[9px] text-gray-400 font-medium uppercase tracking-wider">
+                        {game.category}
+                    </p>
+                    {!game.isAvailable && (
+                        <span className="text-[8px] text-orange-500 font-bold bg-orange-50 px-1 rounded">SOON</span>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    );
+});
+
+GameCard.displayName = 'GameCard';
 
 interface GameListProps {
     onSelectGame?: (gameId: string) => void;
@@ -71,9 +139,12 @@ export function GameList({ onSelectGame, compact = false }: GameListProps) {
         }
     };
 
-    const filteredGames = selectedCategory === 'All'
-        ? games
-        : games.filter(game => game.category === selectedCategory);
+    // Memoize filtered games calculation
+    const filteredGames = useMemo(() => {
+        return selectedCategory === 'All'
+            ? games
+            : games.filter(game => game.category === selectedCategory);
+    }, [selectedCategory]);
 
     return (
         <div className={`h-full w-full bg-white/50 backdrop-blur-sm ${compact ? 'p-6' : 'p-8'} font-sans overflow-hidden flex flex-col relative`}>
@@ -180,61 +251,11 @@ export function GameList({ onSelectGame, compact = false }: GameListProps) {
                 {/* Games Grid */}
                 <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 pb-8 ${!compact ? 'max-w-7xl mx-auto' : ''}`}>
                     {filteredGames.map((game) => (
-                        <Card key={game.id} className="group border-0 shadow-sm hover:shadow-lg transition-all duration-300 bg-white/90 backdrop-blur-sm rounded-lg overflow-hidden flex flex-col ring-1 ring-gray-100 hover:ring-orange-500/30">
-                            <div className="relative aspect-video w-full overflow-hidden">
-                                <Image
-                                    src={game.image}
-                                    alt={game.title}
-                                    fill
-                                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                                />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                                    {game.isAvailable ? (
-                                        onSelectGame ? (
-                                            <button
-                                                onClick={() => onSelectGame(game.id)}
-                                                className="bg-white text-gray-900 rounded-full p-2 shadow-lg hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-white"
-                                                aria-label={`Play ${game.title}`}
-                                            >
-                                                <Play className="w-4 h-4 fill-current" />
-                                            </button>
-                                        ) : (
-                                            <Link href={game.route}>
-                                                <button
-                                                    className="bg-white text-gray-900 rounded-full p-2 shadow-lg hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-white"
-                                                    aria-label={`Play ${game.title}`}
-                                                >
-                                                    <Play className="w-4 h-4 fill-current" />
-                                                </button>
-                                            </Link>
-                                        )
-                                    ) : (
-                                        <div className="bg-black/60 text-white rounded-full p-1.5 backdrop-blur">
-                                            <Lock className="w-4 h-4" />
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="absolute top-1 right-1 pointer-events-none">
-                                    <span className="text-[8px] font-bold text-white bg-black/50 backdrop-blur-md px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                                        {game.category}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <CardContent className="p-2 flex flex-col gap-0.5">
-                                <h3 className="text-[11px] font-bold text-gray-800 leading-tight truncate group-hover:text-orange-600 transition-colors">
-                                    {game.title}
-                                </h3>
-                                <div className="flex items-center justify-between">
-                                    <p className="text-[9px] text-gray-400 font-medium uppercase tracking-wider">
-                                        {game.category}
-                                    </p>
-                                    {!game.isAvailable && (
-                                        <span className="text-[8px] text-orange-500 font-bold bg-orange-50 px-1 rounded">SOON</span>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <GameCard
+                            key={game.id}
+                            game={game}
+                            onSelectGame={onSelectGame}
+                        />
                     ))}
                 </div>
             </div>
