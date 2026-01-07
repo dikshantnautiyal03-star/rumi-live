@@ -4,9 +4,8 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { games, categories } from '@/app/(main)/game-catalog/data';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Play, Lock, MessageSquarePlus, X, Send, Loader2, Users } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Play, Lock, MessageSquarePlus, X, Send, Loader2 } from 'lucide-react';
 import { db, auth } from '@/lib/config/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { AlertModal } from '@/components/ui/alert-modal';
@@ -186,6 +185,9 @@ export function GameList({ onSelectGame, compact = false }: GameListProps) {
                                     src={game.image}
                                     alt={game.title}
                                     fill
+                                    // ⚡ Bolt Optimization: Add sizes prop to serve correctly sized images based on viewport width
+                                    // This prevents downloading full-size images for small grid items
+                                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
                                     className="object-cover group-hover:scale-110 transition-transform duration-500"
                                 />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
