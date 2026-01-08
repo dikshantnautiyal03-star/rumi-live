@@ -126,6 +126,7 @@ export default function LandingPage() {
                     src="https://placehold.co/1200x675/1a1a2e/ff6b6b?text=🎮+Video+Demo+Placeholder"
                     alt="Rumi Demo Video"
                     fill
+                    sizes="(max-width: 896px) 100vw, 896px"
                     className="object-cover opacity-60"
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/30 transition-all duration-300">
