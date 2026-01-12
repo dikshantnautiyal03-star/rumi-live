@@ -179,13 +179,16 @@ export function GameList({ onSelectGame, compact = false }: GameListProps) {
             <div className="flex-1 overflow-y-auto min-h-0 pr-2 custom-scrollbar">
                 {/* Games Grid */}
                 <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 pb-8 ${!compact ? 'max-w-7xl mx-auto' : ''}`}>
-                    {filteredGames.map((game) => (
+                    {filteredGames.map((game, index) => (
                         <Card key={game.id} className="group border-0 shadow-sm hover:shadow-lg transition-all duration-300 bg-white/90 backdrop-blur-sm rounded-lg overflow-hidden flex flex-col ring-1 ring-gray-100 hover:ring-orange-500/30">
                             <div className="relative aspect-video w-full overflow-hidden">
                                 <Image
                                     src={game.image}
                                     alt={game.title}
                                     fill
+                                    /* Bolt: Optimized with sizes to prevent loading full-width images, and priority for above-the-fold */
+                                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                                    priority={index < 6}
                                     className="object-cover group-hover:scale-110 transition-transform duration-500"
                                 />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
