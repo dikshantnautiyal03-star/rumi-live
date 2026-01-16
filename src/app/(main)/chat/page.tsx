@@ -323,12 +323,12 @@ function ChatContent({ preselectedChatId, preselectedStartWith, onBack }: ChatPa
                 <div className="p-4 md:p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
                         {onBack ? (
-                            <Button variant="ghost" size="icon" className="h-10 w-10 text-gray-700 hover:bg-gray-200/50 rounded-full font-bold hidden md:flex" onClick={onBack}>
+                            <Button variant="ghost" size="icon" aria-label="Go back" className="h-10 w-10 text-gray-700 hover:bg-gray-200/50 rounded-full font-bold hidden md:flex" onClick={onBack}>
                                 <ArrowLeft className="h-6 w-6 stroke-[3px]" />
                             </Button>
                         ) : (
                             <Link href="/home">
-                                <Button variant="ghost" size="icon" className="h-10 w-10 text-gray-700 hover:bg-gray-200/50 rounded-full font-bold hidden md:flex">
+                                <Button variant="ghost" size="icon" aria-label="Go home" className="h-10 w-10 text-gray-700 hover:bg-gray-200/50 rounded-full font-bold hidden md:flex">
                                     <ArrowLeft className="h-6 w-6 stroke-[3px]" />
                                 </Button>
                             </Link>
@@ -424,7 +424,7 @@ function ChatContent({ preselectedChatId, preselectedStartWith, onBack }: ChatPa
                         <div className="h-16 md:h-20 shrink-0 border-b border-gray-100 flex items-center justify-between px-4 md:px-6 bg-white/90 backdrop-blur-md sticky top-0 z-20 shadow-sm">
                             <div className="flex items-center gap-3">
                                 {/* Back Button inside Chat Header for Mobile - Made more visible */}
-                                <Button variant="ghost" size="icon" className="md:hidden -ml-2 text-gray-800 hover:bg-gray-100 rounded-full" onClick={() => router.push('/chat')}>
+                                <Button variant="ghost" size="icon" aria-label="Back to conversations" className="md:hidden -ml-2 text-gray-800 hover:bg-gray-100 rounded-full" onClick={() => router.push('/chat')}>
                                     <ArrowLeft className="h-6 w-6 stroke-[3px]" />
                                 </Button>
                                 <Avatar className="h-8 w-8 md:h-10 md:w-10 border-2 border-gray-50">
@@ -439,7 +439,7 @@ function ChatContent({ preselectedChatId, preselectedStartWith, onBack }: ChatPa
                             <div className="flex gap-1">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-colors rounded-full">
+                                        <Button variant="ghost" size="icon" aria-label="Chat options" className="text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-colors rounded-full">
                                             <MoreVertical className="h-5 w-5" />
                                         </Button>
                                     </DropdownMenuTrigger>
@@ -507,6 +507,7 @@ function ChatContent({ preselectedChatId, preselectedStartWith, onBack }: ChatPa
                                                 <button
                                                     key={emoji}
                                                     type="button"
+                                                    aria-label={`Send ${emoji} emoji`}
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
@@ -531,6 +532,7 @@ function ChatContent({ preselectedChatId, preselectedStartWith, onBack }: ChatPa
                                             type="button"
                                             variant="ghost"
                                             size="icon"
+                                            aria-label="Toggle emoji picker"
                                             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                             className={`mb-1 rounded-full transition-colors shrink-0 ${showEmojiPicker ? 'text-orange-500 bg-orange-50' : 'text-gray-400 hover:text-orange-500 hover:bg-orange-50'}`}
                                         >
@@ -550,6 +552,7 @@ function ChatContent({ preselectedChatId, preselectedStartWith, onBack }: ChatPa
 
                                     <Button
                                         type="submit"
+                                        aria-label="Send message"
                                         disabled={!newMessage.trim()}
                                         className={`h-10 w-10 md:h-12 md:w-12 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center shrink-0
                                             ${newMessage.trim()

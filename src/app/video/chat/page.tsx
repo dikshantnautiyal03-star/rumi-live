@@ -282,6 +282,7 @@ export default function VideoChatPage() {
                         <Button
                             size="icon"
                             variant="secondary"
+                            aria-label="Add friend"
                             className="h-10 w-10 md:h-8 md:w-8 rounded-full bg-blue-500/40 backdrop-blur hover:bg-blue-600/60 text-white border-0 transition-colors shadow-sm"
                             onClick={async () => {
                                 if (networkManager?.opponentUid) {
@@ -319,6 +320,7 @@ export default function VideoChatPage() {
                         <Button
                             size="icon"
                             variant="secondary"
+                            aria-label="Report user"
                             className="h-10 w-10 md:h-8 md:w-8 rounded-full bg-red-500/40 backdrop-blur hover:bg-red-600/60 text-white border-0 transition-colors shadow-sm"
                             onClick={() => setShowReportModal(true)}
                         >
@@ -385,6 +387,7 @@ export default function VideoChatPage() {
                         <Button
                             type="submit"
                             size="icon"
+                            aria-label="Send message"
                             className="h-9 w-9 rounded-full bg-orange-500 hover:bg-orange-600 text-white border-0 transition-all shadow-md hover:scale-105 shrink-0"
                         >
                             <Send className="w-4 h-4 ml-0.5" />
@@ -426,7 +429,7 @@ export default function VideoChatPage() {
 
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-full shrink-0 transition-colors">
+                                    <Button type="button" variant="ghost" size="icon" aria-label="Emoji picker" className="h-8 w-8 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-full shrink-0 transition-colors">
                                         <Smile className="w-5 h-5" />
                                     </Button>
                                 </PopoverTrigger>
@@ -436,6 +439,7 @@ export default function VideoChatPage() {
                                             <button
                                                 key={emoji}
                                                 type="button"
+                                                aria-label={`Send ${emoji} emoji`}
                                                 className="hover:bg-orange-50 hover:scale-110 p-2 rounded-lg text-xl transition-all duration-200 cursor-pointer"
                                                 onClick={() => setInputText(prev => prev + emoji)}
                                             >
@@ -452,7 +456,7 @@ export default function VideoChatPage() {
                                 placeholder="Type..."
                                 className="border-0 focus-visible:ring-0 shadow-none bg-transparent h-8 px-2 text-sm min-w-0 placeholder:text-gray-400"
                             />
-                            <Button type="submit" size="icon" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full h-8 w-8 shadow-sm shrink-0 transition-transform hover:scale-105">
+                            <Button type="submit" size="icon" aria-label="Send message" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full h-8 w-8 shadow-sm shrink-0 transition-transform hover:scale-105">
                                 <Send className="w-3.5 h-3.5 ml-0.5" />
                             </Button>
                         </form>
@@ -498,6 +502,7 @@ export default function VideoChatPage() {
                 <Button
                     variant="secondary"
                     size="icon"
+                    aria-label="Exit chat"
                     className="rounded-full shadow-lg bg-white/90 backdrop-blur-sm hover:bg-white text-gray-800 border border-gray-200"
                     onClick={() => router.push('/home')}
                 >
