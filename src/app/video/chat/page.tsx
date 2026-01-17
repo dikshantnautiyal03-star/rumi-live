@@ -218,6 +218,8 @@ export default function VideoChatPage() {
                         playsInline
                         muted
                         className="w-full h-full object-cover"
+                        aria-label="Local video preview"
+                        title="Local video preview"
                     />
                     <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-medium hidden md:block">
                         You
@@ -231,6 +233,8 @@ export default function VideoChatPage() {
                         autoPlay
                         playsInline
                         className="w-full h-full object-cover"
+                        aria-label="Remote video stream"
+                        title="Remote video stream"
                     />
 
                     {/* Incoming Invite Overlay */}
@@ -283,6 +287,7 @@ export default function VideoChatPage() {
                             size="icon"
                             variant="secondary"
                             className="h-10 w-10 md:h-8 md:w-8 rounded-full bg-blue-500/40 backdrop-blur hover:bg-blue-600/60 text-white border-0 transition-colors shadow-sm"
+                            aria-label="Send friend request"
                             onClick={async () => {
                                 if (networkManager?.opponentUid) {
                                     try {
@@ -321,6 +326,7 @@ export default function VideoChatPage() {
                             variant="secondary"
                             className="h-10 w-10 md:h-8 md:w-8 rounded-full bg-red-500/40 backdrop-blur hover:bg-red-600/60 text-white border-0 transition-colors shadow-sm"
                             onClick={() => setShowReportModal(true)}
+                            aria-label="Report user"
                         >
                             <Flag className="w-5 h-5 md:w-4 md:h-4" />
                         </Button>
@@ -381,11 +387,13 @@ export default function VideoChatPage() {
                             placeholder="Type a message..."
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
+                            aria-label="Chat message"
                         />
                         <Button
                             type="submit"
                             size="icon"
                             className="h-9 w-9 rounded-full bg-orange-500 hover:bg-orange-600 text-white border-0 transition-all shadow-md hover:scale-105 shrink-0"
+                            aria-label="Send message"
                         >
                             <Send className="w-4 h-4 ml-0.5" />
                         </Button>
@@ -426,7 +434,13 @@ export default function VideoChatPage() {
 
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-full shrink-0 transition-colors">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-full shrink-0 transition-colors"
+                                        aria-label="Choose emoji"
+                                    >
                                         <Smile className="w-5 h-5" />
                                     </Button>
                                 </PopoverTrigger>
@@ -451,8 +465,14 @@ export default function VideoChatPage() {
                                 onChange={e => setInputText(e.target.value)}
                                 placeholder="Type..."
                                 className="border-0 focus-visible:ring-0 shadow-none bg-transparent h-8 px-2 text-sm min-w-0 placeholder:text-gray-400"
+                                aria-label="Chat message"
                             />
-                            <Button type="submit" size="icon" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full h-8 w-8 shadow-sm shrink-0 transition-transform hover:scale-105">
+                            <Button
+                                type="submit"
+                                size="icon"
+                                className="bg-orange-500 hover:bg-orange-600 text-white rounded-full h-8 w-8 shadow-sm shrink-0 transition-transform hover:scale-105"
+                                aria-label="Send message"
+                            >
                                 <Send className="w-3.5 h-3.5 ml-0.5" />
                             </Button>
                         </form>
@@ -480,7 +500,7 @@ export default function VideoChatPage() {
                     className="rounded-r-full rounded-l-none bg-orange-500 hover:bg-orange-600 text-white shadow-lg pl-2 pr-4 py-6 font-bold flex items-center gap-2 transition-transform hover:translate-x-1 border-l-0"
                 >
                     <Gamepad2 className="w-5 h-5" />
-                    <span className="text-sm hidden sm:inline">Let's Play</span>
+                    <span className="text-sm hidden sm:inline">Let&apos;s Play</span>
                     <span className="text-sm sm:hidden">Play</span>
                 </Button>
             </div>
@@ -500,6 +520,7 @@ export default function VideoChatPage() {
                     size="icon"
                     className="rounded-full shadow-lg bg-white/90 backdrop-blur-sm hover:bg-white text-gray-800 border border-gray-200"
                     onClick={() => router.push('/home')}
+                    aria-label="Exit video chat"
                 >
                     <X className="w-5 h-5" />
                 </Button>
