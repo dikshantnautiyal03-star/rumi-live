@@ -49,6 +49,7 @@ function VideoGameContent() {
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const isSwitchingMode = useRef(false);
 
     const [status, setStatus] = useState("Waiting for connection...");
     const [mountTime] = useState(Date.now());
@@ -294,6 +295,10 @@ function VideoGameContent() {
             if (showGame && networkManager?.videoConnection) {
                 networkManager.videoConnection.sendGameLeave();
             }
+            // Disconnect/Leave queue on unmount (navigation)
+            if (networkManager) {
+                networkManager.disconnect();
+            }
             unsubs.forEach(unsub => unsub());
         };
     }, [networkManager, showGame]);
@@ -362,6 +367,7 @@ function VideoGameContent() {
     const handleModeToggle = (newMode: 'game' | 'video') => {
         setMode(newMode);
         if (newMode === 'video') {
+            isSwitchingMode.current = true;
             // Notify leaving game before switching
             if (showGame && networkManager?.videoConnection) {
                 networkManager.videoConnection.sendGameLeave();

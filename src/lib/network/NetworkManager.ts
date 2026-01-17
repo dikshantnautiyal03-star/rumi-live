@@ -29,6 +29,7 @@ export class NetworkManager {
     localStream: MediaStream | null = null;
     private isSearching: boolean = false; // [FIX] Track search state
     private lastPreferences: any = {};    // [FIX] Store prefs for re-queueing
+    private unstableTimeout: NodeJS.Timeout | null = null; // Timer for unstable connection
 
     constructor() {
         this.eventEmitter = new EventTarget();
@@ -36,6 +37,7 @@ export class NetworkManager {
         // Handle video connection lost (terminal failure/opponent left abruptly)
         this.eventEmitter.addEventListener('video_connection_lost', () => {
             console.log('[NetworkManager] Video connection lost (terminal). Re-queueing...');
+            this.clearUnstableTimeout();
             this.cleanupCurrentMatch();
             this.findMatch();
         });
@@ -43,9 +45,34 @@ export class NetworkManager {
         // Handle unstable connection (waiting)
         this.eventEmitter.addEventListener('video_connection_unstable', () => {
             console.log('[NetworkManager] Video connection unstable. Waiting for reconnection...');
-            // Do not cleanup or re-queue. Just wait.
-            // UI can show a toast/spinner via this event.
+            // Start a timeout. If not stable within 10s, treat as lost.
+            if (!this.unstableTimeout) {
+                this.unstableTimeout = setTimeout(() => {
+                    console.log('[NetworkManager] Connection unstable for too long. Disconnecting...');
+                    this.clearUnstableTimeout();
+                    this.emit('video_connection_lost'); // Trigger lost handler
+                }, 10000); // 10 seconds
+            }
         });
+
+        // Handle stable connection (recovery)
+        this.eventEmitter.addEventListener('video_connection_established', () => {
+            this.clearUnstableTimeout();
+        });
+
+        // Add beforeunload handler to notify server immediately on tab close
+        if (typeof window !== 'undefined') {
+            window.addEventListener('beforeunload', () => {
+                this.disconnect();
+            });
+        }
+    }
+
+    private clearUnstableTimeout() {
+        if (this.unstableTimeout) {
+            clearTimeout(this.unstableTimeout);
+            this.unstableTimeout = null;
+        }
     }
 
     async connect() {
@@ -333,17 +360,23 @@ export class NetworkManager {
     }
 
     skipMatch() {
+        // Immediate local cleanup for instant feedback
+        console.log('[NetworkManager] Skipping match (Instant)...');
+
+        // Notify server if connected
         if (this.socket && this.isSignalingConnected) {
             console.log('[NetworkManager] Sending skip_match signal...');
             this.socket.emit('skip_match');
-        } else {
-            // Fallback if not connected properly
-            this.emit('match_skipped_client');
         }
+
+        // Force local cleanup immediately without waiting for server 'match_skipped'
+        this.cleanupCurrentMatch();
+        this.emit('match_skipped_client');
     }
 
     disconnect() {
         console.log('[NetworkManager] Disconnecting all connections...');
+        this.clearUnstableTimeout();
         this.cleanupCurrentMatch();
         if (this.socket) this.socket.disconnect();
     }
