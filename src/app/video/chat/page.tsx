@@ -283,6 +283,8 @@ export default function VideoChatPage() {
                             size="icon"
                             variant="secondary"
                             className="h-10 w-10 md:h-8 md:w-8 rounded-full bg-blue-500/40 backdrop-blur hover:bg-blue-600/60 text-white border-0 transition-colors shadow-sm"
+                            aria-label="Add Friend"
+                            title="Add Friend"
                             onClick={async () => {
                                 if (networkManager?.opponentUid) {
                                     try {
@@ -320,6 +322,8 @@ export default function VideoChatPage() {
                             size="icon"
                             variant="secondary"
                             className="h-10 w-10 md:h-8 md:w-8 rounded-full bg-red-500/40 backdrop-blur hover:bg-red-600/60 text-white border-0 transition-colors shadow-sm"
+                            aria-label="Report User"
+                            title="Report User"
                             onClick={() => setShowReportModal(true)}
                         >
                             <Flag className="w-5 h-5 md:w-4 md:h-4" />
@@ -386,6 +390,8 @@ export default function VideoChatPage() {
                             type="submit"
                             size="icon"
                             className="h-9 w-9 rounded-full bg-orange-500 hover:bg-orange-600 text-white border-0 transition-all shadow-md hover:scale-105 shrink-0"
+                            aria-label="Send Message"
+                            title="Send Message"
                         >
                             <Send className="w-4 h-4 ml-0.5" />
                         </Button>
@@ -426,7 +432,7 @@ export default function VideoChatPage() {
 
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-full shrink-0 transition-colors">
+                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-orange-50 hover:bg-orange-50 rounded-full shrink-0 transition-colors" aria-label="Choose Emoji" title="Choose Emoji">
                                         <Smile className="w-5 h-5" />
                                     </Button>
                                 </PopoverTrigger>
@@ -437,6 +443,8 @@ export default function VideoChatPage() {
                                                 key={emoji}
                                                 type="button"
                                                 className="hover:bg-orange-50 hover:scale-110 p-2 rounded-lg text-xl transition-all duration-200 cursor-pointer"
+                                                aria-label={`Add ${emoji} emoji`}
+                                                title={`Add ${emoji}`}
                                                 onClick={() => setInputText(prev => prev + emoji)}
                                             >
                                                 {emoji}
@@ -452,7 +460,7 @@ export default function VideoChatPage() {
                                 placeholder="Type..."
                                 className="border-0 focus-visible:ring-0 shadow-none bg-transparent h-8 px-2 text-sm min-w-0 placeholder:text-gray-400"
                             />
-                            <Button type="submit" size="icon" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full h-8 w-8 shadow-sm shrink-0 transition-transform hover:scale-105">
+                            <Button type="submit" size="icon" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full h-8 w-8 shadow-sm shrink-0 transition-transform hover:scale-105" aria-label="Send Message" title="Send Message">
                                 <Send className="w-3.5 h-3.5 ml-0.5" />
                             </Button>
                         </form>
@@ -499,6 +507,8 @@ export default function VideoChatPage() {
                     variant="secondary"
                     size="icon"
                     className="rounded-full shadow-lg bg-white/90 backdrop-blur-sm hover:bg-white text-gray-800 border border-gray-200"
+                    aria-label="Exit Video Chat"
+                    title="Exit Video Chat"
                     onClick={() => router.push('/home')}
                 >
                     <X className="w-5 h-5" />
