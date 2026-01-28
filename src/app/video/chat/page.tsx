@@ -283,6 +283,8 @@ export default function VideoChatPage() {
                             size="icon"
                             variant="secondary"
                             className="h-10 w-10 md:h-8 md:w-8 rounded-full bg-blue-500/40 backdrop-blur hover:bg-blue-600/60 text-white border-0 transition-colors shadow-sm"
+                            title="Send friend request"
+                            aria-label="Send friend request"
                             onClick={async () => {
                                 if (networkManager?.opponentUid) {
                                     try {
@@ -321,6 +323,8 @@ export default function VideoChatPage() {
                             variant="secondary"
                             className="h-10 w-10 md:h-8 md:w-8 rounded-full bg-red-500/40 backdrop-blur hover:bg-red-600/60 text-white border-0 transition-colors shadow-sm"
                             onClick={() => setShowReportModal(true)}
+                            title="Report opponent"
+                            aria-label="Report opponent"
                         >
                             <Flag className="w-5 h-5 md:w-4 md:h-4" />
                         </Button>
@@ -379,6 +383,7 @@ export default function VideoChatPage() {
                         <input
                             className="flex-1 bg-transparent border-none text-gray-900 text-sm placeholder-gray-500 px-4 py-1 focus:outline-none focus:ring-0"
                             placeholder="Type a message..."
+                            aria-label="Type a message"
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                         />
@@ -386,6 +391,8 @@ export default function VideoChatPage() {
                             type="submit"
                             size="icon"
                             className="h-9 w-9 rounded-full bg-orange-500 hover:bg-orange-600 text-white border-0 transition-all shadow-md hover:scale-105 shrink-0"
+                            title="Send message"
+                            aria-label="Send message"
                         >
                             <Send className="w-4 h-4 ml-0.5" />
                         </Button>
@@ -426,7 +433,14 @@ export default function VideoChatPage() {
 
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-full shrink-0 transition-colors">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-full shrink-0 transition-colors"
+                                        title="Open emoji picker"
+                                        aria-label="Open emoji picker"
+                                    >
                                         <Smile className="w-5 h-5" />
                                     </Button>
                                 </PopoverTrigger>
@@ -438,6 +452,8 @@ export default function VideoChatPage() {
                                                 type="button"
                                                 className="hover:bg-orange-50 hover:scale-110 p-2 rounded-lg text-xl transition-all duration-200 cursor-pointer"
                                                 onClick={() => setInputText(prev => prev + emoji)}
+                                                title={`Add ${emoji} emoji`}
+                                                aria-label={`Add ${emoji} emoji`}
                                             >
                                                 {emoji}
                                             </button>
@@ -450,9 +466,16 @@ export default function VideoChatPage() {
                                 value={inputText}
                                 onChange={e => setInputText(e.target.value)}
                                 placeholder="Type..."
+                                aria-label="Type a message"
                                 className="border-0 focus-visible:ring-0 shadow-none bg-transparent h-8 px-2 text-sm min-w-0 placeholder:text-gray-400"
                             />
-                            <Button type="submit" size="icon" className="bg-orange-500 hover:bg-orange-600 text-white rounded-full h-8 w-8 shadow-sm shrink-0 transition-transform hover:scale-105">
+                            <Button
+                                type="submit"
+                                size="icon"
+                                className="bg-orange-500 hover:bg-orange-600 text-white rounded-full h-8 w-8 shadow-sm shrink-0 transition-transform hover:scale-105"
+                                title="Send message"
+                                aria-label="Send message"
+                            >
                                 <Send className="w-3.5 h-3.5 ml-0.5" />
                             </Button>
                         </form>
@@ -500,6 +523,8 @@ export default function VideoChatPage() {
                     size="icon"
                     className="rounded-full shadow-lg bg-white/90 backdrop-blur-sm hover:bg-white text-gray-800 border border-gray-200"
                     onClick={() => router.push('/home')}
+                    title="Exit video chat"
+                    aria-label="Exit video chat"
                 >
                     <X className="w-5 h-5" />
                 </Button>
