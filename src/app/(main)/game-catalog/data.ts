@@ -65,7 +65,7 @@ export const games: Game[] = [
         category: 'Icebreaker',
         image: '/flames.png',
         route: '/video/game',
-        isAvailable: false,
+        isAvailable: true,
     },
     {
         id: 'gossip',
