@@ -17,10 +17,8 @@ export default class GameScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.svg('red_ball', '/connect4/assets/red_ball.svg');
-        this.load.svg('blue_ball', '/connect4/assets/blue_ball.svg');
-        this.load.svg('board', '/connect4/assets/board.svg');
-        this.load.audio('stacking', '/connect4/audio/stacking.mp3');
+        // No SVG assets — board and tokens are drawn with Phaser Graphics
+        this.load.audio('stacking', 'public/audio/stacking.mp3');
     }
 
     create() {
@@ -43,92 +41,173 @@ export default class GameScene extends Phaser.Scene {
         this.isGameOver = false;
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // BOARD RENDERING — pure Phaser Graphics, absolute world coordinates
+    // No RenderTexture, no holes, no coordinate-system confusion.
+    // ─────────────────────────────────────────────────────────────────────
+
     createBoardVisuals() {
         const { width, height } = this.scale;
-        const cx = width / 2;
-        const cy = height / 2 + 50; // offset slightly down
 
-        const cellW = 80;
-        const cellH = 80;
+        // ── Compute cell size to fill the available space ─────────────────
+        // Top UI area: scores at y=20 (~40px), banner at y=80 (~50px) = ~130px
+        // Leave 16px padding on each side and 16px at bottom.
+        const UI_TOP = 130;   // pixels reserved for the top UI bar
+        const PAD = 16;    // horizontal and bottom padding
+
+        const availW = width - PAD * 2;
+        const availH = height - UI_TOP - PAD;
+
+        const cellByW = Math.floor(availW / this.cols);
+        const cellByH = Math.floor(availH / this.rows);
+        const cellSize = Math.min(cellByW, cellByH);   // whichever axis is tighter
+
+        const cellW = cellSize;
+        const cellH = cellSize;
         const boardW = this.cols * cellW;
         const boardH = this.rows * cellH;
 
-        this.boardGroup = this.add.group();
-        this.tokenGroup = this.add.group();
+        // ── Absolute world position of the board's top-left corner ────────
+        // Horizontally: perfectly centred.
+        // Vertically: centred in the space that remains after the UI header.
+        const boardX = Math.round((width - boardW) / 2);
+        const boardY = Math.round(UI_TOP + (availH - boardH) / 2);
 
-        // Container for easier resizing
-        this.boardContainer = this.add.container(cx, cy);
+        // Hole radius — slightly smaller than half a cell so there's a thin
+        // board frame visible between adjacent holes.
+        const holeR = Math.round(cellW * 0.42);
 
-        // Render SVG board
-        this.boardImage = this.add.image(0, 0, 'board');
-        this.boardImage.setDisplaySize(boardW, boardH);
-        // Tokens must be rendered behind the board overlay to simulate dropping inside.
-        // Therefore, we manage depth explicitly.
-        this.tokenContainer = this.add.container(cx, cy);
-        this.tokenContainer.setDepth(1);
+        // Initialise token list (used only to clean up mid-flight tokens on reset)
+        this.droppedTokens = [];
 
-        this.boardContainer.add(this.boardImage);
-        this.boardContainer.setDepth(2); // Front of tokens
+        // ── The board is ONE Graphics object redrawn on every state change ─
+        this.boardGfx = this.add.graphics().setDepth(0);
 
-        // Preview token
-        this.previewToken = this.add.image(0, -boardH/2 - 40, this.localRole === 'A' ? 'red_ball' : 'blue_ball');
-        this.previewToken.setDisplaySize(cellW * 0.8, cellH * 0.8);
-        this.previewToken.setAlpha(0);
-        this.tokenContainer.add(this.previewToken);
+        // ── Preview disc floating above the hovered column ────────────────
+        this.previewGfx = this.add.graphics().setDepth(5).setAlpha(0);
 
-        // Interaction zones per column
-        const startX = -boardW / 2;
+        // ── Invisible hit-zones per column ────────────────────────────────
         this.hitboxes = [];
         for (let c = 0; c < this.cols; c++) {
-            const hitZone = this.add.zone(startX + (c + 0.5) * cellW, 0, cellW, boardH + 100).setInteractive();
-            hitZone.on('pointerover', () => this.handleHover(c));
-            hitZone.on('pointerout', () => this.handleHoverOut(c));
-            hitZone.on('pointerdown', () => this.handleClick(c));
-            this.boardContainer.add(hitZone);
-            this.hitboxes.push(hitZone);
+            const zone = this.add.zone(
+                boardX + (c + 0.5) * cellW,
+                boardY + boardH / 2,
+                cellW, boardH + 80
+            ).setDepth(10).setInteractive();
+            zone.on('pointerover', () => this.handleHover(c));
+            zone.on('pointerout', () => this.handleHoverOut(c));
+            zone.on('pointerdown', () => this.handleClick(c));
+            this.hitboxes.push(zone);
         }
 
-        // Store sizing for calculation later
-        this.boardConfig = {
-            boardW, boardH, cellW, cellH, startX,
-            startY: -boardH / 2
-        };
+        // ── Store layout for use in all other methods ─────────────────────
+        this.boardConfig = { boardW, boardH, cellW, cellH, holeR, boardX, boardY };
+
+        // Draw the initial empty board
+        this._redrawBoard();
+    }
+
+    /**
+     * Redraws the entire board from scratch using this.boardState.
+     * Called once at start, and again after every token lands.
+     * All coordinates are absolute world coordinates — no offsets, no tricks.
+     */
+    _redrawBoard() {
+        if (!this.boardConfig || !this.boardGfx) return;
+        const { boardW, boardH, cellW, cellH, holeR, boardX, boardY } = this.boardConfig;
+        const gfx = this.boardGfx;
+        gfx.clear();
+
+        // 1) Board body
+        gfx.fillStyle(0x222222, 1);
+        gfx.fillRoundedRect(boardX, boardY, boardW, boardH, 10);
+        // Thin top-edge highlight for depth effect
+        gfx.fillStyle(0x222222, 0.18);
+        gfx.fillRoundedRect(boardX + 4, boardY + 4, boardW - 8, 14,
+            { tl: 7, tr: 7, bl: 0, br: 0 });
+        // Bottom shadow strip
+        gfx.fillStyle(0x222222, 0.5);
+        gfx.fillRoundedRect(boardX + 2, boardY + boardH - 6, boardW - 4, 6,
+            { tl: 0, tr: 0, bl: 8, br: 8 });
+
+        // 2) Slot circles — drawn at exact absolute world coordinates
+        for (let r = 0; r < this.rows; r++) {
+            for (let c = 0; c < this.cols; c++) {
+                // World centre of this slot — same formula used in applyMove
+                const cx = boardX + (c + 0.5) * cellW;
+                const cy = boardY + (r + 0.5) * cellH;
+                const val = this.boardState[r][c];
+
+                if (val === 0) {
+                    // Empty slot: dark inset circle
+                    gfx.fillStyle(0x555555, 1);
+                    gfx.fillCircle(cx, cy, holeR);
+                    // Thin inner rim
+                    gfx.fillStyle(0x555555, 0.6);
+                    gfx.fillCircle(cx, cy, holeR - 2);
+                } else {
+                    // Filled slot: draw the token colours directly
+                    const dark = val === 1 ? 0xb71c1c : 0x0d47a1;
+                    const main = val === 1 ? 0xe53935 : 0x1e88e5;
+                    const shine = val === 1 ? 0xff8a80 : 0x82b1ff;
+
+                    gfx.fillStyle(dark, 1);
+                    gfx.fillCircle(cx, cy + 2, holeR);       // shadow offset
+                    gfx.fillStyle(main, 1);
+                    gfx.fillCircle(cx, cy, holeR);
+                    gfx.fillStyle(shine, 0.5);
+                    gfx.fillCircle(
+                        cx - holeR * 0.22, cy - holeR * 0.24,
+                        holeR * 0.38);
+                    gfx.fillStyle(0xffffff, 0.35);
+                    gfx.fillCircle(
+                        cx - holeR * 0.28, cy - holeR * 0.32,
+                        holeR * 0.13);
+                }
+            }
+        }
+
+        // 3) Outer border
+        gfx.lineStyle(2, 0x1976d2, 0.7);
+        gfx.strokeRoundedRect(boardX, boardY, boardW, boardH, 10);
+    }
+
+    /**
+     * Draw a shaded token disc centred at (x, y) in the given Graphics object.
+     * Used for: falling animation tokens and the hover-preview disc.
+     */
+    _drawToken(gfx, x, y, r, role) {
+        gfx.clear();
+        const dark = role === 'A' ? 0xb71c1c : 0x0d47a1;
+        const main = role === 'A' ? 0xe53935 : 0x1e88e5;
+        const shine = role === 'A' ? 0xff8a80 : 0x82b1ff;
+
+        gfx.fillStyle(dark, 1); gfx.fillCircle(x, y + 2, r);
+        gfx.fillStyle(main, 1); gfx.fillCircle(x, y, r);
+        gfx.fillStyle(shine, 0.5); gfx.fillCircle(x - r * 0.22, y - r * 0.24, r * 0.38);
+        gfx.fillStyle(0xffffff, 0.35); gfx.fillCircle(x - r * 0.28, y - r * 0.32, r * 0.13);
     }
 
     handleHover(col) {
         if (this.isGameOver || this.currentTurn !== this.localRole || !this.connection) return;
-        const { startX, cellW, boardH } = this.boardConfig;
-
-        // Set preview token alpha to 0.15 as specified
-        this.previewToken.setAlpha(0.15);
-        this.previewToken.setTexture(this.localRole === 'A' ? 'red_ball' : 'blue_ball');
-        this.previewToken.setPosition(startX + (col + 0.5) * cellW, -boardH / 2 - 40);
+        const { boardX, boardY, cellW, holeR } = this.boardConfig;
+        const px = boardX + (col + 0.5) * cellW;
+        const py = boardY - holeR - 8;
+        this.previewGfx.setPosition(px, py);
+        this._drawToken(this.previewGfx, 0, 0, holeR, this.localRole);
+        this.previewGfx.setAlpha(0.6);
     }
 
     handleHoverOut(col) {
-        this.previewToken.setAlpha(0);
+        this.previewGfx.setAlpha(0);
     }
 
     handleClick(col) {
         if (this.isGameOver || this.currentTurn !== this.localRole || !this.connection) return;
-
-        // Validation: Verify column is not full (row 0 is the top, row 5 is the bottom)
-        // Note: The prompt says "row 0 is bottom, row 5 is top" in one place, but array indexing usually goes top-down.
-        // We will stick to the standard: index 0 = top row, index 5 = bottom row for visualization, but iterate from bottom up to find empty.
-        // Let's implement bottom-up finding:
         const row = this.getLowestEmptyRow(col);
-
-        if (row === -1) {
-            console.warn("Column is full!");
-            return; // Invalid move
-        }
-
-        this.previewToken.setAlpha(0); // Hide preview
-
-        // Apply move locally
+        if (row === -1) { console.warn('Column full!'); return; }
+        this.previewGfx.setAlpha(0);
         this.applyMove(col, row, this.localRole);
-
-        // Transmit move
         this.connection.sendGameMove(col);
     }
 
@@ -143,35 +222,38 @@ export default class GameScene extends Phaser.Scene {
     }
 
     applyMove(col, row, role) {
-        // Update logic matrix
         this.boardState[row][col] = role === 'A' ? 1 : 2;
 
-        const { startX, startY, cellW, cellH } = this.boardConfig;
+        const { boardX, boardY, cellW, cellH, holeR } = this.boardConfig;
 
-        // Spawn token at the top
-        const startDropY = startY - 40;
-        const targetDropY = startY + (row + 0.5) * cellH;
-        const targetDropX = startX + (col + 0.5) * cellW;
+        // Target: world centre of the destination slot
+        const targetX = boardX + (col + 0.5) * cellW;
+        const targetY = boardY + (row + 0.5) * cellH;
 
-        const token = this.add.image(targetDropX, startDropY, role === 'A' ? 'red_ball' : 'blue_ball');
-        token.setDisplaySize(cellW * 0.8, cellH * 0.8);
-        this.tokenContainer.add(token);
+        // Animate: token drops from above the board
+        const animToken = this.add.graphics().setDepth(8);
+        this._drawToken(animToken, 0, 0, holeR, role);
+        animToken.x = targetX;
+        animToken.y = boardY - holeR * 2;
+        this.droppedTokens.push(animToken);
 
-        // Play drop sound
         this.sound.play('stacking');
 
-        // Tween drop animation
         this.tweens.add({
-            targets: token,
-            y: targetDropY,
+            targets: animToken,
+            y: targetY,
             duration: GameConfig.RULES.ANIMATION_DURATION,
             ease: 'Bounce.easeOut',
             onComplete: () => {
+                // Remove animation graphic and bake piece into the board drawing
+                animToken.destroy();
+                const idx = this.droppedTokens.indexOf(animToken);
+                if (idx !== -1) this.droppedTokens.splice(idx, 1);
+                this._redrawBoard();
                 this.checkGameState(col, row, role);
             }
         });
 
-        // Switch turn temporarily so no one can click during animation
         this.currentTurn = 'NONE';
     }
 
@@ -296,8 +378,12 @@ export default class GameScene extends Phaser.Scene {
 
     resetGame() {
         this.initializeBoardState();
-        this.tokenContainer.removeAll(true);
-        this.setBannerText(this.currentTurn === this.localRole ? 'Your Turn' : "Opponent's Turn");
+        this.droppedTokens.forEach(t => t.destroy());
+        this.droppedTokens = [];
+        this._redrawBoard();   // reset board visuals to all-empty slots
+        this.setBannerText(
+            this.currentTurn === this.localRole ? 'Your Turn' : "Opponent's Turn"
+        );
     }
 
     createUI() {
@@ -328,7 +414,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     drawBanner() {
-        if(!this.bannerBg) return;
+        if (!this.bannerBg) return;
         this.bannerBg.clear();
         this.bannerBg.fillStyle(0xffffff, 1);
         const bw = 300;
@@ -337,40 +423,70 @@ export default class GameScene extends Phaser.Scene {
     }
 
     setBannerText(text) {
-        if(this.bannerText) this.bannerText.setText(text);
+        if (this.bannerText) this.bannerText.setText(text);
     }
 
     setupNetworking() {
-        const urlParams = new URLSearchParams(window.location.search);
+        console.log('[GameScene] Setting up networking...');
 
-        // Determine role (isInitiator = Player A/Red)
-        this.localRole = GameConfig.MATCH_DATA.isInitiator ? 'A' : 'B';
-
-        console.log(`[GameScene] Setup networking. My role: ${this.localRole}`);
-
-        // Setup NetworkManager (Signaling)
-        this.networkManager = new NetworkManager(
-            GameConfig.NETWORK.SERVER_URL,
-            GameConfig.USER_ID,
-            GameConfig.MATCH_DATA.roomId
-        );
-
-        // Map events
-        this.networkManager.on('match_ready', this.onMatchReady.bind(this));
-        this.networkManager.on('player_disconnected', this.onPlayerDisconnected.bind(this));
-        this.networkManager.on('error', (err) => {
-            console.error('Network error:', err);
-            this.setBannerText('Network Error');
-        });
-
-        // Use custom connect4 connection
-        this.networkManager.setConnectionClass(Connect4Connection);
-        this.networkManager.connect();
+        this.networkManager = new NetworkManager(this);
+        this.setupNetworkEvents();
+        this.connectToServer();
     }
 
-    onMatchReady(matchData, connection) {
-        console.log('[GameScene] Match Ready!', matchData);
-        this.connection = connection;
+    setupNetworkEvents() {
+        this.events.on('match_found', (msg) => {
+            console.log('[Connect4] Match found, connecting to game...');
+
+            // Normalize role from msg
+            const role = msg.role;
+            if (role === 'A' || role === 'host') {
+                this.localRole = 'A';
+            } else {
+                this.localRole = 'B';
+            }
+
+            this.networkManager.connectToGame();
+            this.setBannerText('Connecting to opponent...');
+        });
+
+        this.events.on('game_datachannel_open', () => {
+            console.log('[Connect4] WebRTC Channel Open!');
+            this.onMatchReady();
+        });
+
+        this.events.on('queued', () => {
+            this.setBannerText('Finding opponent...');
+        });
+
+        this.events.on('connection_failed', () => {
+            this.setBannerText('Connection failed.');
+        });
+    }
+
+    async connectToServer() {
+        try {
+            await this.networkManager.connect();
+            const matchData = GameConfig.MATCH_DATA;
+
+            if (matchData && matchData.roomId && matchData.mode === 'embedded') {
+                console.log('[Connect4] Using embedded match data:', matchData);
+                // Wait 500ms for ICE servers to be received from parent
+                await new Promise(resolve => setTimeout(resolve, 500));
+                this.networkManager.handleMatchFound(matchData);
+            } else {
+                console.log('[Connect4] Joining matchmaking queue...');
+                this.networkManager.findMatch();
+            }
+        } catch (error) {
+            console.error('[Connect4] Failed to connect:', error);
+            this.setBannerText('Network Error');
+        }
+    }
+
+    onMatchReady() {
+        console.log('[GameScene] Match Ready!');
+        this.connection = new Connect4Connection(this.networkManager.gameConnection, this);
         this.setBannerText(this.localRole === 'A' ? 'Your Turn' : 'Waiting for Opponent');
 
         // Setup specific listeners
@@ -406,8 +522,8 @@ export default class GameScene extends Phaser.Scene {
 
     resize(gameSize) {
         const { width, height } = gameSize;
-        if(this.oppScoreText) this.oppScoreText.setPosition(width - 20, 20);
-        if(this.bannerText) this.bannerText.setPosition(width / 2, 80);
+        if (this.oppScoreText) this.oppScoreText.setPosition(width - 20, 20);
+        if (this.bannerText) this.bannerText.setPosition(width / 2, 80);
         this.drawBanner();
     }
 }

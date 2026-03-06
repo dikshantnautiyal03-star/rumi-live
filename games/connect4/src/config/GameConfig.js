@@ -25,19 +25,19 @@ const GameConfig = {
     },
 
     NETWORK: {
-        // Updated dynamic matching URL per instructions
-        SERVER_URL: typeof process !== 'undefined' && process.env.NEXT_PUBLIC_MATCHMAKING_URL
-            ? process.env.NEXT_PUBLIC_MATCHMAKING_URL
-            : 'http://localhost:5000'
+        SERVER_URL: (window.location.port === '5173' || window.location.port === '3000')
+            ? 'http://localhost:8000'
+            : window.location.origin,
+        SOCKET_PATH: '/socket.io',
     },
 
-    USER_ID: 'dev-user-1', // Overridden by URL
+    USER_ID: 'dev-user-1', // Overridden at runtime by parent page
     MATCH_DATA: {
-        roomId: 'dev-room',
-        role: 'playerA',
-        opponentId: 'dev-user-2',
-        isInitiator: true,
-        mode: 'multiplayer'
+        roomId: null,
+        role: null,
+        opponentId: null,
+        isInitiator: false,
+        mode: 'multiplayer' // 'embedded' triggers embedded mode, otherwise uses matchmaking queue
     }
 };
 
