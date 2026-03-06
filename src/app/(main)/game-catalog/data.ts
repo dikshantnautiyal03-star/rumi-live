@@ -44,12 +44,12 @@ export const games: Game[] = [
         isAvailable: true,
     },
     {
-        id: 'connect-four',
+        id: 'connect4',
         title: 'CONNECT FOUR',
         category: 'Strategy',
         image: '/connect-four.png', // Placeholder
         route: '/video/game',
-        isAvailable: false,
+        isAvailable: true,
     },
     {
         id: 'knife-throw',
